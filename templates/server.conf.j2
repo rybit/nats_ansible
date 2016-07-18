@@ -1,0 +1,25 @@
+port: {{ nats_port }}
+http_port: {{ nats_monitoring_port }}
+
+debug: false
+trace: false
+logtime: true
+#log_file: "/var/log/gnatsd.log"
+
+tls {
+  cert_file: "{{ tls_cert_file }}"
+  key_file:  "{{ tls_key_file }}"
+  ca_file:   "{{ tls_ca_file }}"
+  timeout: 0.5
+  verify: true
+}
+
+cluster {
+  port: {{ nats_cluster_port }}
+  routes = [
+    {% for host in groups['nats'] %}
+      nats-route://{{ hostvars[host].ansible_fqdn }}:{{ nats_cluster_port }}
+    {% endfor %}
+  ]
+}
+

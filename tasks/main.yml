@@ -1,0 +1,57 @@
+---
+
+- name: install unzip
+  tags: install_nats
+  apt: pkg=unzip state=latest update_cache=yes
+
+#
+# Sets up a cluster of nats servers
+#
+- name: create gnats dir
+  file: path={{ nats_install_dir }} owner=nobody group=nogroup mode=0755 state=directory
+  tags: install_nats
+
+- name: fetch gnats release
+  tags: install_nats
+  get_url:
+    url: https://github.com/nats-io/gnatsd/releases/download/v0.8.0/gnatsd-v0.8.0-linux-amd64.zip
+    dest: /tmp/gnatsd-release.zip
+    checksum: sha1:8796f71e3a4c175090955c314d6854a698aa3303
+
+- name: install gnats
+  tags: install_nats
+  unarchive: src=/tmp/gnatsd-release.zip dest={{ nats_install_dir }} copy=no
+
+- name: link binary
+  tags: install_nats
+  file:
+    src: "{{ nats_install_dir }}/gnatsd-{{ nats_version }}-linux-amd64/gnatsd"
+    dest: "{{ nats_install_dir }}/gnatsd"
+    owner: nobody
+    group: nogroup
+    state: link
+
+- name: install config file
+  template: src=server.conf.j2 dest={{ nats_install_dir }}/server.conf
+  tags: install_nats
+
+- name: add upstart script
+  tags: install_nats
+  template: src=upstart.conf.j2 dest=/etc/init/gnatsd.conf owner=root group=root
+
+- name: start gnatsd
+  tags: install_nats
+  service: name=gnatsd state=started enabled=yes
+
+- name: install nats-top
+  get_url:
+    url: https://github.com/nats-io/nats-top/releases/download/v0.2.0/nats-top-linux_amd64.zip
+    dest: /tmp/nats-top.zip
+    checksum: sha1:1e3a01cf416a8e8f660f55c2f96ef05ba5ad155e
+
+- name: extract nats-top
+  unarchive: src=/tmp/nats-top.zip dest=/tmp/
+
+- name: install nats-top
+  command: mv -v /tmp/nats-top-linux_amd64/nats-top /usr/local/bin
+

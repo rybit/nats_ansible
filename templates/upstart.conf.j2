@@ -1,0 +1,20 @@
+description "gnatsd"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+respawn limit 60 10
+
+setuid nobody
+setgid nogroup
+
+instance gnatsd
+script
+exec /bin/bash <<EOT
+  logger -t gnatsd "Starting server: gnatsd"
+
+  cd {{ nats_install_dir }}
+  exec ./gnatsd -c server.conf
+EOT
+end script
